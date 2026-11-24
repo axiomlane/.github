@@ -1,0 +1,53 @@
+name: Claude review
+
+# Runs when a pull request to main is opened or marked ready for review, and
+# again on a comment that starts with `@claude review`. Not on every push,
+# because all repos share one Claude subscription's usage limits.
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+    branches: [main]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  code-review:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: claude-code-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: axiomlane/infra/actions/claude-code-review@7b9fca811371c1674bb4f92ab577ebd18bb5d303 # main
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
+
+  security-review:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '@claude review'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: claude-security-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: axiomlane/infra/actions/claude-security-review@7b9fca811371c1674bb4f92ab577ebd18bb5d303 # main
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
