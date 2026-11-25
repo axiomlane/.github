@@ -90,9 +90,14 @@ runs:
           - Each finding as an inline comment on the vulnerable line with
             `mcp__github_inline_comment__create_inline_comment` (`confirmed: true`):
             severity (high or medium), the vulnerability, the attack path and a fix.
-          - One summary with `gh pr comment`, headed `## Claude security review`: the
-            findings ranked most severe first, or "No security issues found."
+          - One summary, headed `## Claude security review`: the findings ranked
+            most severe first, or "No security issues found."
           Only post GitHub comments. Don't output the review as messages.
+          Post the summary in one command whose body is a quoted heredoc, so `$`
+          and backticks in the text stay literal:
+          `gh pr comment ${{ inputs.pr_number }} --body-file - <<'EOF'` ... `EOF`.
+          Don't use `--body "..."` or `$(...)`: the shell would expand them and
+          the command is refused.
 
           ${{ inputs.extra_prompt }}
         claude_args: |
